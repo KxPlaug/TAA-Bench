@@ -172,10 +172,26 @@ for images, images_ID,  gt_cpu in dataloader:
 pbar.close()
 print("success rate: %.4f" % np.mean(success_rates))
 
+MAPPER = {
+    'inceptionv3': 'tf_inception_v3',
+    'inceptionv4': 'tf_inception_v4',
+    'inceptionresnetv2': 'tf_inc_res_v2',
+    'resnet50': 'tf_resnet_v2_50',
+    'resnet101': 'tf_resnet_v2_101',
+    'resnet152': 'tf_resnet_v2_152',
+    'ens3_adv_inceptionv3': 'tf_ens3_adv_inc_v3',
+    'ens4_adv_inceptionv3': 'tf_ens4_adv_inc_v3',
+    'ens_adv_inceptionresnetv2': 'tf_ens_adv_inc_res_v2'
+}
 
-model_names = ['tf_inception_v3','tf_inception_v4','tf_inc_res_v2','tf_resnet_v2_50','tf_resnet_v2_101','tf_resnet_v2_152','tf_ens3_adv_inc_v3','tf_ens4_adv_inc_v3','tf_ens_adv_inc_res_v2']
+# model_names = ['tf_inception_v3','tf_inception_v4','tf_inc_res_v2','tf_resnet_v2_50','tf_resnet_v2_101','tf_resnet_v2_152','tf_ens3_adv_inc_v3','tf_ens4_adv_inc_v3','tf_ens_adv_inc_res_v2']
+
+model_names = [MAPPER[transformed_model_name] for transformed_model_name in config.transfer.models]
 
 models_path = './models/'
+
+for model_name in model_names:
+    verify(model_name, models_path, OUTPUT_DIR, 'dataset/images.csv', batch_size=BATCH_SIZE, num_images=NUM_IMAGES)
 
 # for step in SAVE_STEPS:
 #     print(f"verify for step {step}")

@@ -7,3 +7,13 @@ attack:
   method: BIM
   steps: 10
   eps: 16
+transfer:
+  models:
+    - inceptionv4
+    - inceptionresnetv2
+    - resnet50
+    - resnet101
+    - resnet152
+    - ens3_adv_inceptionv3
+    - ens4_adv_inceptionv3
+    - ens_adv_inceptionresnetv2
