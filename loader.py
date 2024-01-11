@@ -3,7 +3,6 @@ from PIL import Image
 from torch.utils import data
 import pandas as pd
 from torchvision import transforms as T
-import torch
 import torch.nn as nn
 
 class ImageNet(data.Dataset):
