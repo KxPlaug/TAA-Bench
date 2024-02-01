@@ -51,41 +51,30 @@ class GRA(Attack):
                 
             x = V(x.detach(), requires_grad=True)
             output = model(x)
-            x_p = F.softmax(output, dim=-1)
             loss = F.cross_entropy(output, labels)
             loss.backward()
             current_gradient = x.grad.data
-            x_i_p_list = []
-            gradient_list = []
+            avg_gradient = 0
             for _ in range(self.max_iter):
-                gauss = torch.rand_like(x) * 2 * (self.eps * self.beta) - self.eps * self.beta
-                gauss = gauss.cuda()
-                x_dct = dct_2d(x + gauss).cuda()
-                mask = (torch.rand_like(x) * 2 * self.rho + 1 - self.rho).cuda()
-                x_idct = idct_2d(x_dct * mask)
-                x_idct = V(x_idct, requires_grad = True)
-                output_v3 = model(x_idct)
+                uniform_noise = torch.rand_like(x) * 2 * (self.eps * self.beta) - self.eps * self.beta
+                x_neighbor = x + uniform_noise
+                x_neighbor = V(x_neighbor, requires_grad=True)
+                output_v3 = model(x_neighbor)
                 loss = F.cross_entropy(output_v3, labels)
                 loss.backward()
-                gradient_list.append(x_idct.grad.data)
-                x_i_p = F.softmax(output_v3, dim=-1)
-                x_i_p_list.append(x_i_p)
-            cossims = [(x_p * x_i_p).sum(1, keepdim=True) / (torch.sqrt((x_p ** 2).sum(1, keepdim=True)) * torch.sqrt((x_i_p ** 2).sum(1, keepdim=True))) for x_i_p in x_i_p_list]
-            
-            c_gradient = torch.zeros_like(current_gradient)
-            for j in range(len(cossims)):
-                cossim = cossims[j].unsqueeze(-1).unsqueeze(-1)
-                gradient = gradient_list[j]
-                c_gradient += (1-cossim) * current_gradient + cossim * gradient
-            current_gradient = c_gradient / len(cossims)
-            
+                avg_gradient += x_neighbor.grad.data
+            avg_gradient = avg_gradient / self.max_iter
+            cossim = (current_gradient * avg_gradient).sum([1, 2, 3], keepdim=True) / (
+                        torch.sqrt((current_gradient ** 2).sum([1, 2, 3], keepdim=True)) * torch.sqrt(
+                    (avg_gradient ** 2).sum([1, 2, 3], keepdim=True)))
+            current_gradient = cossim * current_gradient + (1 - cossim) * avg_gradient
             noise = self.momentum * grad + current_gradient / torch.abs(current_gradient).mean([1, 2, 3], keepdim=True)
             eqm = (torch.sign(grad) == torch.sign(noise)).float()
             grad = noise
             dim = torch.ones_like(images)  - eqm
             m = m * (eqm + dim * 0.94)
             x = x + self.alpha * torch.sign(grad) * m
-            x = clip_by_tensor(x, images_min, images_max).detach()
+            x = clip_by_tensor(x, images_min, images_max)
             
             
         adv_img_np = x.detach().cpu().numpy()

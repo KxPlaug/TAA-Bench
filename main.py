@@ -6,6 +6,12 @@ from attacks.mifgsm import MIFGSM
 from attacks.naa import NAA
 from attacks.sinifgsm import SINIFGSM
 from attacks.ssa import SSA
+from attacks.gra import GRA
+from attacks.grassa import GRASSA
+from attacks.fsps import FSPS
+from attacks.advGAN import AdvGAN
+from attacks.GE_advGAN import GE_AdvGAN
+from attacks.sia import SIA
 
 from omegaconf import OmegaConf
 import pretrainedmodels

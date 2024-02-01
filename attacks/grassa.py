@@ -20,62 +20,6 @@ def clip_by_tensor(t, t_min, t_max):
         result = (result <= t_max).float() * result + (result > t_max).float() * t_max
         return result
 
-# def Gradient_Relevance_Attack_SSA(images, gt, model, min, max):
-#     """
-#     The attack algorithm of our proposed Spectrum Simulate Attack
-#     :param images: the input images
-#     :param gt: ground-truth
-#     :param model: substitute model
-#     :param mix: the mix the clip operation 
-#     :param max: the max the clip operation
-#     :return: the adversarial images
-#     """
-#     beta = 3.5
-#     eps = 16 / 255
-#     T = 10
-#     alpha = eps / T
-#     m = torch.ones_like(images) * 10 / 9.4
-#     max_iter = 20
-#     momentum = 1.0
-#     rho = 0.5
-#     x = images.clone()
-#     grad = torch.zeros_like(images)
-#     image_width = opt.image_width
-#     sigma = opt.sigma
-#     for i in range(T):
-#         x = V(x.detach(), requires_grad=True)
-#         output = model(x)
-#         loss = F.cross_entropy(output, gt)
-#         loss.backward()
-#         current_gradient = x.grad.data
-#         avg_gradient = 0
-#         for _ in range(max_iter):
-#             gauss = torch.rand_like(x) * 2 * (eps * beta) - eps * beta
-#             gauss = gauss.cuda()
-#             x_dct = dct_2d(x + gauss).cuda()
-#             mask = (torch.rand_like(x) * 2 * rho + 1 - rho).cuda()
-#             x_idct = idct_2d(x_dct * mask)
-#             x_idct = V(x_idct, requires_grad = True)
-#             output_v3 = model(DI(x_idct))
-#             loss = F.cross_entropy(output_v3, gt)
-#             loss.backward()
-#             avg_gradient += x_idct.grad.data
-#         avg_gradient = avg_gradient / max_iter
-#         cossim = (current_gradient * avg_gradient).sum([1, 2, 3], keepdim=True) / (
-#                     torch.sqrt((current_gradient ** 2).sum([1, 2, 3], keepdim=True)) * torch.sqrt(
-#                 (avg_gradient ** 2).sum([1, 2, 3], keepdim=True)))
-#         current_gradient = cossim * current_gradient + (1 - cossim) * avg_gradient
-#         current_gradient = F.conv2d(current_gradient, T_kernel, bias=None, stride=1, padding=(3, 3), groups=3)
-#         current_gradient = current_gradient / torch.abs(current_gradient).mean([1, 2, 3], keepdim=True)
-#         current_gradient = momentum * grad + current_gradient
-#         eqm = (torch.sign(grad) == torch.sign(current_gradient)).float()
-#         grad = current_gradient
-#         dim = torch.ones_like(images)  - eqm
-#         m = m * (eqm + dim * 0.94)
-#         x = x + alpha * torch.sign(grad) * m
-#         x = clip_by_tensor(x, min, max)
-#     return x.detach()
-
 def gkern(kernlen=15, nsig=3):
     x = np.linspace(-nsig, nsig, kernlen)
     kern1d = st.norm.pdf(x)
@@ -105,10 +49,12 @@ def DI(x, resize_rate=1.15, diversity_prob=0.5):
     ret = padded if torch.rand(1) < diversity_prob else x
     return ret
 T_kernel = gkern(7, 3)
-class GRA(Attack):
+
+
+class GRASSA(Attack):
     def __init__(self, model, eps=8/255,
                  alpha=2/255, steps=10, model_learning_rate=0.0001,train_steps=[0,2,4,6,8]):
-        super().__init__("GRA", model)
+        super().__init__("GRASSA", model)
         self.eps = eps
         self.alpha = alpha
         self.steps = steps
